@@ -35,3 +35,7 @@ Backend:
 ```bash
 cd backend
 dotnet run
+
+# Pastabos
+
+Projektas nėra baigtinis – jį nuolat pildau, pridedu naujų funkcijų ir taisau klaidas.
