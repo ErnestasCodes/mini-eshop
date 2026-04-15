@@ -57,75 +57,91 @@ export default function RegisterPage({ onRegistered, onNavigate }) {
     }
 
     return (
-        <div className="mx-auto max-w-md rounded-2xl border border-slate-700 bg-slate-800/70 p-6 shadow-lg">
-            <h2 className="text-2xl font-bold text-white">Registracija</h2>
-            <p className="mt-2 text-sm text-slate-400">
-                API endpoint: <span className="font-mono text-slate-200">POST {endpoint}</span>
-            </p>
+        <div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm lg:grid lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.1fr)]">
+            <div className="border-b border-slate-200 bg-slate-50 p-8 lg:border-b-0 lg:border-r">
+                <div className="text-xs uppercase tracking-[0.22em] text-slate-500">Nauja paskyra</div>
+                <h2 className="mt-4 text-3xl font-semibold text-slate-900">Registracija</h2>
+                <p className="mt-4 text-sm leading-7 text-slate-600">
+                    Susikurkite paskyra, kad parduotuve veiktu kaip normalus pirkimo srautas:
+                    prisijungimas, krepselis ir uzsakymo pradzia vienoje vietoje.
+                </p>
+            </div>
 
-            <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-                <div>
-                    <label className="mb-1 block text-sm text-slate-300" htmlFor="name">
-                        Vardas
-                    </label>
-                    <input
-                        id="name"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Ivesk varda"
-                        value={form.name}
-                        onChange={(e) => updateField("name", e.target.value)}
-                        required
-                    />
-                </div>
+            <div className="p-8">
+                <h3 className="text-2xl font-semibold text-slate-900">Jusu duomenys</h3>
+                <p className="mt-2 text-sm text-slate-500">Uzpildykite laukus ir susikurkite paskyra.</p>
 
-                <div>
-                    <label className="mb-1 block text-sm text-slate-300" htmlFor="email">
-                        El. pastas
-                    </label>
-                    <input
-                        id="email"
-                        type="email"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="vardas@email.com"
-                        value={form.email}
-                        onChange={(e) => updateField("email", e.target.value)}
-                    />
-                </div>
+                <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="name">
+                            Vardas
+                        </label>
+                        <input
+                            id="name"
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                            placeholder="Iveskite varda"
+                            value={form.name}
+                            onChange={(e) => updateField("name", e.target.value)}
+                            required
+                        />
+                    </div>
 
-                <div>
-                    <label className="mb-1 block text-sm text-slate-300" htmlFor="password">
-                        Slaptazodis
-                    </label>
-                    <input
-                        id="password"
-                        type="password"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Ivesk slaptazodi"
-                        value={form.password}
-                        onChange={(e) => updateField("password", e.target.value)}
-                    />
-                </div>
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="email">
+                            El. pastas
+                        </label>
+                        <input
+                            id="email"
+                            type="email"
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                            placeholder="vardas@email.com"
+                            value={form.email}
+                            onChange={(e) => updateField("email", e.target.value)}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="password">
+                            Slaptazodis
+                        </label>
+                        <input
+                            id="password"
+                            type="password"
+                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                            placeholder="Iveskite slaptazodi"
+                            value={form.password}
+                            onChange={(e) => updateField("password", e.target.value)}
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    >
+                        {loading ? "Registruojama..." : "Registruotis"}
+                    </button>
+                </form>
+
+                {error && (
+                    <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                        Klaida: {error}
+                    </div>
+                )}
+
+                {success && (
+                    <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                        {success}
+                    </div>
+                )}
 
                 <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full rounded-xl border border-indigo-500 bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    onClick={() => onNavigate?.("/")}
                 >
-                    {loading ? "Registruojama..." : "Registruotis"}
+                    Grizti i parduotuve
                 </button>
-            </form>
-
-            {error && (
-                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
-                    Klaida: {error}
-                </div>
-            )}
-
-            {success && (
-                <div className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-300">
-                    {success}
-                </div>
-            )}
+            </div>
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 function normalizeProduct(product) {
     const id = Number(product.productId ?? product.id);
@@ -27,15 +27,6 @@ export default function AdminPanelPage({
         description: "",
     });
     const [drafts, setDrafts] = useState({});
-
-    useEffect(() => {
-        const next = {};
-        for (const p of products) {
-            const normalized = normalizeProduct(p);
-            next[normalized.productId] = normalized;
-        }
-        setDrafts(next);
-    }, [products]);
 
     const sortedProducts = useMemo(
         () => [...products].sort((a, b) => Number(a.productId ?? a.id) - Number(b.productId ?? b.id)),
@@ -74,14 +65,15 @@ export default function AdminPanelPage({
 
     return (
         <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-700 bg-slate-800/70 p-6 shadow-lg">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold text-white">Admin panel</h2>
-                        <p className="mt-1 text-sm text-slate-400">Prekiu valdymas: kurti, redaguoti, trinti.</p>
+                        <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Administravimas</div>
+                        <h2 className="mt-2 text-3xl font-semibold text-slate-900">Produktu valdymas</h2>
+                        <p className="mt-2 text-sm text-slate-600">Kurti, redaguoti ir salinti prekes viename puslapyje.</p>
                     </div>
                     <button
-                        className="rounded-xl border border-red-500/40 bg-red-500/20 px-3 py-2 text-sm text-red-200 transition hover:bg-red-500/30"
+                        className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
                         onClick={onAdminLogout}
                     >
                         Admin atsijungti
@@ -89,21 +81,18 @@ export default function AdminPanelPage({
                 </div>
             </div>
 
-            <form
-                className="rounded-2xl border border-slate-700 bg-slate-800/70 p-6 shadow-lg"
-                onSubmit={handleCreate}
-            >
-                <h3 className="text-lg font-semibold text-white">Prideti nauja preke</h3>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <form className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm" onSubmit={handleCreate}>
+                <h3 className="text-xl font-semibold text-slate-900">Prideti nauja preke</h3>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
                     <input
-                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                         placeholder="Pavadinimas"
                         value={createForm.productName}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, productName: e.target.value }))}
                         required
                     />
                     <input
-                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                         placeholder="Kaina"
                         type="number"
                         step="0.01"
@@ -112,7 +101,7 @@ export default function AdminPanelPage({
                         required
                     />
                     <input
-                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                         placeholder="Kiekis sandelyje"
                         type="number"
                         value={createForm.stock}
@@ -120,8 +109,8 @@ export default function AdminPanelPage({
                         required
                     />
                     <input
-                        className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="Aprasymas (nebutina)"
+                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                        placeholder="Aprasymas"
                         value={createForm.description}
                         onChange={(e) => setCreateForm((prev) => ({ ...prev, description: e.target.value }))}
                     />
@@ -130,29 +119,29 @@ export default function AdminPanelPage({
                 <button
                     type="submit"
                     disabled={loading}
-                    className="mt-4 rounded-xl border border-emerald-500 bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                     {loading ? "Vykdoma..." : "Prideti preke"}
                 </button>
             </form>
 
             {error && (
-                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                     Klaida: {error}
                 </div>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-4">
                 {sortedProducts.map((p) => {
                     const productId = Number(p.productId ?? p.id);
                     const draft = drafts[productId] ?? normalizeProduct(p);
 
                     return (
-                        <div key={productId} className="rounded-2xl border border-slate-700 bg-slate-800/70 p-4 shadow-lg">
-                            <div className="mb-3 text-xs text-slate-400">ID: {productId}</div>
-                            <div className="grid gap-3 md:grid-cols-2">
+                        <div key={productId} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                            <div className="mb-4 text-sm font-medium text-slate-500">Prekes ID #{productId}</div>
+                            <div className="grid gap-4 md:grid-cols-2">
                                 <input
-                                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                                     value={draft.productName}
                                     onChange={(e) =>
                                         setDrafts((prev) => ({
@@ -162,7 +151,7 @@ export default function AdminPanelPage({
                                     }
                                 />
                                 <input
-                                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                                     type="number"
                                     step="0.01"
                                     value={draft.price}
@@ -174,7 +163,7 @@ export default function AdminPanelPage({
                                     }
                                 />
                                 <input
-                                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                                     type="number"
                                     value={draft.stock}
                                     onChange={(e) =>
@@ -185,7 +174,7 @@ export default function AdminPanelPage({
                                     }
                                 />
                                 <input
-                                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                                     value={draft.description}
                                     onChange={(e) =>
                                         setDrafts((prev) => ({
@@ -195,16 +184,16 @@ export default function AdminPanelPage({
                                     }
                                 />
                             </div>
-                            <div className="mt-3 flex gap-2">
+                            <div className="mt-5 flex flex-wrap gap-3">
                                 <button
-                                    className="rounded-xl border border-indigo-500 bg-indigo-600 px-3 py-2 text-sm text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                                     onClick={() => handleUpdate(productId)}
                                     disabled={loading}
                                 >
                                     Issaugoti
                                 </button>
                                 <button
-                                    className="rounded-xl border border-red-500/40 bg-red-500/20 px-3 py-2 text-sm text-red-200 transition hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                     onClick={() => onDelete?.(productId)}
                                     disabled={loading}
                                 >

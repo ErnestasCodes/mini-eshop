@@ -7,9 +7,32 @@ import RegisterPage from "./components/RegisterPage";
 import AdminLoginPage from "./components/AdminLoginPage";
 import AdminPanelPage from "./components/AdminPanelPage";
 
+function formatPrice(value) {
+    return `${Number(value ?? 0).toFixed(2)} EUR`;
+}
+
+function getCartStorageKey(nextUserId) {
+    return Number.isFinite(nextUserId) && nextUserId > 0
+        ? `myshop_cart_items_${nextUserId}`
+        : "myshop_cart_items_guest";
+}
+
+function readCartFromStorage(nextUserId) {
+    try {
+        const stored = localStorage.getItem(getCartStorageKey(nextUserId));
+        const parsed = stored ? JSON.parse(stored) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
 export default function App() {
     const [products, setProducts] = useState([]);
     const [err, setErr] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [stockFilter, setStockFilter] = useState("all");
+    const [sortOption, setSortOption] = useState("featured");
     const initialUserId = (() => {
         const storedUserId = Number(localStorage.getItem("myshop_user_id"));
         return Number.isFinite(storedUserId) && storedUserId > 0 ? storedUserId : 0;
@@ -42,6 +65,34 @@ export default function App() {
 
         return products.find((p) => String(p.productId ?? p.id) === String(productIdFromPath)) ?? null;
     }, [products, productIdFromPath]);
+    const filteredProducts = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+
+        const nextProducts = products.filter((product) => {
+            const name = String(product.productName ?? "").toLowerCase();
+            const description = String(product.description ?? product.productDescription ?? "").toLowerCase();
+            const stock = Number(product.stock ?? 0);
+            const price = Number(product.price ?? 0);
+            const matchesQuery = !query || name.includes(query) || description.includes(query);
+
+            if (!matchesQuery) return false;
+            if (stockFilter === "in_stock") return stock > 0;
+            if (stockFilter === "low_stock") return stock > 0 && stock <= 5;
+            if (stockFilter === "premium") return price >= 100;
+
+            return true;
+        });
+
+        return nextProducts.sort((left, right) => {
+            if (sortOption === "price_asc") return Number(left.price ?? 0) - Number(right.price ?? 0);
+            if (sortOption === "price_desc") return Number(right.price ?? 0) - Number(left.price ?? 0);
+            if (sortOption === "name") {
+                return String(left.productName ?? "").localeCompare(String(right.productName ?? ""));
+            }
+            if (sortOption === "stock") return Number(right.stock ?? 0) - Number(left.stock ?? 0);
+            return Number(left.productId ?? left.id ?? 0) - Number(right.productId ?? right.id ?? 0);
+        });
+    }, [products, searchQuery, sortOption, stockFilter]);
 
     const cartCount = useMemo(
         () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
@@ -51,22 +102,10 @@ export default function App() {
         () => cartItems.reduce((sum, item) => sum + item.quantity * item.price, 0),
         [cartItems]
     );
-
-    function getCartStorageKey(nextUserId) {
-        return Number.isFinite(nextUserId) && nextUserId > 0
-            ? `myshop_cart_items_${nextUserId}`
-            : "myshop_cart_items_guest";
-    }
-
-    function readCartFromStorage(nextUserId) {
-        try {
-            const stored = localStorage.getItem(getCartStorageKey(nextUserId));
-            const parsed = stored ? JSON.parse(stored) : [];
-            return Array.isArray(parsed) ? parsed : [];
-        } catch {
-            return [];
-        }
-    }
+    const activeProductCount = useMemo(
+        () => products.filter((product) => Number(product.stock ?? 0) > 0).length,
+        [products]
+    );
 
     async function loadProducts() {
         const base = import.meta.env.VITE_API_BASE_URL;
@@ -97,6 +136,8 @@ export default function App() {
     useEffect(() => {
         function handlePopState() {
             setPathname(window.location.pathname);
+            setIsCartOpen(false);
+            setIsUserMenuOpen(false);
         }
 
         window.addEventListener("popstate", handlePopState);
@@ -107,6 +148,8 @@ export default function App() {
         if (!nextPath || nextPath === pathname) return;
         window.history.pushState({}, "", nextPath);
         setPathname(nextPath);
+        setIsCartOpen(false);
+        setIsUserMenuOpen(false);
     }
 
     function saveUserName(nextName) {
@@ -620,26 +663,42 @@ export default function App() {
         }
     }
 
+    function getQuantityOptions(item) {
+        const stockForProduct = Number(
+            products.find((product) => Number(product.productId ?? product.id) === Number(item.id))?.stock ?? 0
+        );
+        const maxQuantity = Math.max(1, Number(item.quantity ?? 0) + Math.max(0, stockForProduct));
+
+        return Array.from({ length: maxQuantity }, (_, index) => index + 1);
+    }
+
     return (
-        <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 overflow-hidden">
-            <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-indigo-500 blur-3xl opacity-20"></div>
-            <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-blue-500 blur-3xl opacity-20"></div>
+        <div className="min-h-screen bg-slate-100 text-slate-900">
+            <div className="border-b bg-slate-900 text-white">
+                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 text-xs sm:px-6 lg:px-8">
+                    <span>Nemokamas pristatymas nuo 100 EUR</span>
+                    <span className="text-slate-300">Saugus atsiskaitymas ir greitas aptarnavimas</span>
+                </div>
+            </div>
 
             <div className="relative">
-                <header className="sticky top-0 z-50 border-b border-slate-700 bg-slate-900/70 backdrop-blur">
-                    <div className="mx-auto flex max-w-6xl items-center justify-between p-4">
-                        <div className="text-xl font-extrabold tracking-tight">
-                            MiniEshop <span className="text-slate-400">projekt</span>
+                <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between p-4 sm:px-6 lg:px-8">
+                        <div className="text-left">
+                            <div className="text-2xl font-semibold text-slate-900">MyShop</div>
+                            <div className="text-sm text-slate-500">Paprastas internetines parduotuves dizainas</div>
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <input
-                                className="w-56 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-indigo-500"
-                                placeholder="Search..."
+                                className="w-64 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white"
+                                placeholder="Ieskoti prekiu"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                             />
                             {!userName && (
                                 <button
-                                    className="rounded-xl border border-sky-500 bg-sky-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-500"
+                                    className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                                     onClick={() => {
                                         navigate("/register");
                                     }}
@@ -649,7 +708,7 @@ export default function App() {
                             )}
                             {!userName && (
                                 <button
-                                    className="rounded-xl border border-indigo-500 bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
+                                    className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
                                     onClick={() => {
                                         navigate("/login");
                                     }}
@@ -658,7 +717,7 @@ export default function App() {
                                 </button>
                             )}
                             <button
-                                className="rounded-xl border border-amber-500 bg-amber-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-amber-500"
+                                className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                                 onClick={() => {
                                     navigate(isAdmin ? "/admin" : "/admin/login");
                                 }}
@@ -667,19 +726,19 @@ export default function App() {
                             </button>
                             <div className="relative z-[60]">
                                 <button
-                                    className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700 transition"
+                                    className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                                     onClick={() => setIsCartOpen((prev) => !prev)}
                                 >
-                                    Cart ({cartCount})
+                                    Krepselis ({cartCount})
                                 </button>
                                 {isCartOpen && (
-                                    <div className="absolute right-0 z-[70] mt-2 w-80 rounded-xl border border-slate-600 bg-slate-800 p-3 shadow-lg">
+                                    <div className="absolute right-0 z-[70] mt-2 w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
                                         {cartItems.length === 0 ? (
-                                            <p className="text-sm text-slate-300">Krepselis tuscias.</p>
+                                            <p className="text-sm text-slate-600">Krepselis tuscias.</p>
                                         ) : (
                                             <>
                                                 <div className="max-h-64 overflow-auto">
-                                                    <table className="w-full text-left text-sm text-slate-200">
+                                                    <table className="w-full text-left text-sm text-slate-700">
                                                         <thead>
                                                             <tr className="text-slate-400">
                                                                 <th className="pb-2">Product</th>
@@ -690,11 +749,11 @@ export default function App() {
                                                         </thead>
                                                         <tbody>
                                                             {cartItems.map((item) => (
-                                                                <tr key={item.id} className="border-t border-slate-700">
+                                                                <tr key={item.id} className="border-t border-slate-200">
                                                                     <td className="py-2 pr-2">{item.name}</td>
                                                                     <td className="py-2 text-center">
                                                                         <select
-                                                                            className="w-20 rounded-md border border-slate-600 bg-slate-900 px-2 py-1 text-center text-slate-100 outline-none focus:border-indigo-500"
+                                                                            className="w-20 rounded-md border border-slate-300 bg-white px-2 py-1 text-center text-slate-700 outline-none focus:border-slate-400"
                                                                             value={item.quantity}
                                                                             onChange={(e) => handleChangeCartQuantity(item, Number(e.target.value))}
                                                                             disabled={
@@ -703,34 +762,11 @@ export default function App() {
                                                                                 isClearingCart
                                                                             }
                                                                         >
-                                                                            {Array.from(
-                                                                                {
-                                                                                    length: Math.max(
-                                                                                        1,
-                                                                                        item.quantity +
-                                                                                            Math.max(
-                                                                                                0,
-                                                                                                Number(
-                                                                                                    products.find(
-                                                                                                        (product) =>
-                                                                                                            Number(
-                                                                                                                product.productId ??
-                                                                                                                    product.id
-                                                                                                            ) === Number(item.id)
-                                                                                                    )?.stock ?? 0
-                                                                                                )
-                                                                                            )
-                                                                                    ),
-                                                                                },
-                                                                                (_, index) => {
-                                                                                    const value = index + 1;
-                                                                                    return (
-                                                                                        <option key={value} value={value}>
-                                                                                            {value}
-                                                                                        </option>
-                                                                                    );
-                                                                                }
-                                                                            )}
+                                                                            {getQuantityOptions(item).map((value) => (
+                                                                                <option key={value} value={value}>
+                                                                                    {value}
+                                                                                </option>
+                                                                            ))}
                                                                         </select>
                                                                     </td>
                                                                     <td className="py-2 text-right">
@@ -738,7 +774,7 @@ export default function App() {
                                                                     </td>
                                                                     <td className="py-2 text-right">
                                                                         <button
-                                                                            className="rounded-lg border border-red-500/40 bg-red-500/20 px-2 py-1 text-xs text-red-200 transition hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                            className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                                                             onClick={() => handleRemoveFromCart(item)}
                                                                             disabled={
                                                                                 deletingCartItemId === item.id ||
@@ -746,7 +782,7 @@ export default function App() {
                                                                                 isClearingCart
                                                                             }
                                                                         >
-                                                                            {deletingCartItemId === item.id ? "Deleting..." : "Delete"}
+                                                                            {deletingCartItemId === item.id ? "Trinama..." : "Salinti"}
                                                                         </button>
                                                                     </td>
                                                                 </tr>
@@ -754,12 +790,12 @@ export default function App() {
                                                         </tbody>
                                                     </table>
                                                 </div>
-                                                <div className="mt-3 border-t border-slate-700 pt-2 text-right text-sm font-semibold text-white">
-                                                    Viso: {cartTotal.toFixed(2)} EUR
+                                                <div className="mt-3 border-t border-slate-200 pt-3 text-right text-sm font-semibold text-slate-900">
+                                                    Viso: {formatPrice(cartTotal)}
                                                 </div>
                                                 <div className="mt-2 flex justify-end">
                                                     <button
-                                                        className="rounded-lg border border-red-500/50 bg-red-500/20 px-3 py-2 text-xs font-medium text-red-100 transition hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                                                         onClick={handleClearCart}
                                                         disabled={isClearingCart || deletingCartItemId !== null || updatingCartItemId !== null}
                                                     >
@@ -774,19 +810,19 @@ export default function App() {
                             {userName && (
                                 <div className="relative z-[60]">
                                     <button
-                                        className="flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800 px-3 py-2"
+                                        className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2.5"
                                         onClick={() => setIsUserMenuOpen((prev) => !prev)}
                                     >
-                                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
                                             {userName.charAt(0).toUpperCase()}
                                         </div>
-                                        <span className="text-sm text-slate-100">{userName}</span>
+                                        <span className="text-sm text-slate-700">{userName}</span>
                                     </button>
 
                                     {isUserMenuOpen && (
-                                        <div className="absolute right-0 z-[70] mt-2 w-40 rounded-xl border border-slate-600 bg-slate-800 p-2 shadow-lg">
+                                        <div className="absolute right-0 z-[70] mt-2 w-40 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
                                             <button
-                                                className="w-full rounded-lg border border-red-500/40 bg-red-500/20 px-3 py-2 text-sm text-red-200 transition hover:bg-red-500/30"
+                                                className="w-full rounded-xl px-3 py-2 text-sm text-red-600 transition hover:bg-red-50"
                                                 onClick={handleLogout}
                                             >
                                                 Atsijungti
@@ -799,7 +835,7 @@ export default function App() {
                     </div>
                 </header>
 
-                <main className="mx-auto max-w-6xl p-6">
+                <main className="mx-auto max-w-7xl p-6">
                     {isRegisterPage ? (
                         <RegisterPage
                             onRegistered={handleRegistered}
@@ -856,43 +892,86 @@ export default function App() {
                         />
                     ) : (
                         <>
-                            <div className="mb-8 rounded-2xl border border-slate-700 bg-slate-800/60 p-8 shadow-lg backdrop-blur">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                            <div className="mb-8 rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm">
+                                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                                     <div>
-                                        <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-blue-400 bg-clip-text text-transparent">
-                                            MiniEshop project
+                                        <div className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                            Internetine parduotuve
+                                        </div>
+                                        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-900">
+                                            Baltas fonas, aiskios kainos ir standartinis parduotuves isdestymas.
                                         </h1>
-                                        <p className="mt-2 text-slate-400">Produktai kraunami i .NET Web API</p>
+                                        <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+                                            Produktu sarasas, filtrai, krepstelis ir prisijungimas rodomi taip, kaip
+                                            iprasta daugumoje el. parduotuviu.
+                                        </p>
                                     </div>
 
-                                    <div className="flex gap-2">
-                                        <span className="rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
-                                            React + Vite
-                                        </span>
-                                        <span className="rounded-full bg-slate-700 px-3 py-1 text-xs font-semibold text-slate-200">
-                                            .NET Web API
-                                        </span>
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                                            <div className="text-sm text-slate-500">Aktyviu prekiu</div>
+                                            <div className="mt-1 text-2xl font-semibold text-slate-900">{activeProductCount}</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                                            <div className="text-sm text-slate-500">Krepselio suma</div>
+                                            <div className="mt-1 text-2xl font-semibold text-slate-900">{formatPrice(cartTotal)}</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {err && (
-                                <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-red-400">
+                                <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                                     {err}
                                 </div>
                             )}
 
-                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                                {products.map((p) => (
-                                    <ProductCard
-                                        key={p.productId ?? p.id}
-                                        p={p}
-                                        onAddToCart={() => handleAddToCart(p)}
-                                        onViewProduct={(id) => navigate(`/product/${id}`)}
-                                        canAddToCart={userId > 0}
-                                    />
-                                ))}
+                            {!userName && (
+                                <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                                    Prisijunkite, jei norite deti prekes i krepseli.
+                                </div>
+                            )}
+
+                            <div className="mb-6 flex flex-col gap-4 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                                <div className="flex flex-wrap gap-2">
+                                    <button className={`rounded-full px-4 py-2 text-sm font-medium transition ${stockFilter === "all" ? "bg-slate-900 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`} onClick={() => setStockFilter("all")}>Visos prekes</button>
+                                    <button className={`rounded-full px-4 py-2 text-sm font-medium transition ${stockFilter === "in_stock" ? "bg-slate-900 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`} onClick={() => setStockFilter("in_stock")}>Turimos vietoje</button>
+                                    <button className={`rounded-full px-4 py-2 text-sm font-medium transition ${stockFilter === "low_stock" ? "bg-slate-900 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`} onClick={() => setStockFilter("low_stock")}>Mazas likutis</button>
+                                    <button className={`rounded-full px-4 py-2 text-sm font-medium transition ${stockFilter === "premium" ? "bg-slate-900 text-white" : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`} onClick={() => setStockFilter("premium")}>Brangesnes</button>
+                                </div>
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Produktu katalogas</div>
+                                        <p className="mt-1 text-sm text-slate-600">Rasta {filteredProducts.length} is {products.length} prekiu.</p>
+                                    </div>
+                                    <select className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none transition focus:border-slate-400" value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
+                                        <option value="featured">Rekomenduojamos</option>
+                                        <option value="price_asc">Kaina: nuo maziausios</option>
+                                        <option value="price_desc">Kaina: nuo didziausios</option>
+                                        <option value="name">Pavadinimas</option>
+                                        <option value="stock">Didziausias likutis</option>
+                                    </select>
+                                </div>
                             </div>
+
+                            {filteredProducts.length === 0 ? (
+                                <div className="rounded-[28px] border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
+                                    <div className="text-lg font-semibold text-slate-900">Nieko nerasta</div>
+                                    <p className="mt-2 text-sm text-slate-600">Pabandykite pakeisti paieska arba filtrus.</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                                    {filteredProducts.map((p) => (
+                                        <ProductCard
+                                            key={p.productId ?? p.id}
+                                            p={p}
+                                            onAddToCart={() => handleAddToCart(p)}
+                                            onViewProduct={(id) => navigate(`/product/${id}`)}
+                                            canAddToCart={userId > 0}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </>
                     )}
                 </main>

@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    background: #f3f4f6;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #f3f4f6;
+    color: #0f172a;
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
