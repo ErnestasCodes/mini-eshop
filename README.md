@@ -2,6 +2,9 @@
 
 Pilno stacko mini e-shop projektas su atskiru backend ir frontend. Projektą kūriau tam, kad praktiškai išbandyčiau .NET Web API, darbą su duomenų baze ir frontend–backend integraciją.
 
+# Pastabos
+Projektas nėra baigtinis – jį nuolat pildau, pridedu naujų funkcijų ir taisau klaidas.
+
 ## Naudotos technologijos
 
 **Backend:**
@@ -36,6 +39,4 @@ Backend:
 cd backend
 dotnet run
 
-# Pastabos
 
-Projektas nėra baigtinis – jį nuolat pildau, pridedu naujų funkcijų ir taisau klaidas.
