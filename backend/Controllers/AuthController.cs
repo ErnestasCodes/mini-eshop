@@ -41,7 +41,8 @@ public class AuthController : ControllerBase
                 user.Email,
                 user.Phone,
                 user.Age,
-                user.IsAdmin
+                user.IsAdmin,
+                user.IsReadOnlyAdmin
             }
         });
     }

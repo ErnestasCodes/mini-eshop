@@ -1,6 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Text;
 using web_api.Data;
 using web_api.model;
 
@@ -44,7 +41,7 @@ public class UserService
         }
 
         user.Email = normalizedEmail;
-        user.Password = HashPassword(user.Password);
+        user.Password = PasswordHasher.Hash(user.Password);
 
         _db.Users.Add(user);
         _db.SaveChanges();
@@ -77,7 +74,7 @@ public class UserService
             return null;
         }
 
-        if (VerifyPassword(password, user.Password))
+        if (PasswordHasher.Verify(password, user.Password))
         {
             return user;
         }
@@ -85,7 +82,7 @@ public class UserService
         // Legacy support: if old records were stored as plain text, upgrade to hash after successful login.
         if (user.Password == password)
         {
-            user.Password = HashPassword(password);
+            user.Password = PasswordHasher.Hash(password);
             _db.SaveChanges();
             return user;
         }
@@ -143,52 +140,5 @@ public class UserService
         }
 
         return admins;
-    }
-
-    private static string HashPassword(string password)
-    {
-        const int iterations = 100_000;
-        var salt = RandomNumberGenerator.GetBytes(16);
-        var hash = Rfc2898DeriveBytes.Pbkdf2(
-            Encoding.UTF8.GetBytes(password),
-            salt,
-            iterations,
-            HashAlgorithmName.SHA256,
-            32);
-
-        return $"{iterations}.{Convert.ToBase64String(salt)}.{Convert.ToBase64String(hash)}";
-    }
-
-    private static bool VerifyPassword(string password, string storedHash)
-    {
-        var rawParts = storedHash.Split('.');
-        if (rawParts.Length != 3)
-        {
-            return false;
-        }
-
-        if (!int.TryParse(rawParts[0], out var iterations))
-        {
-            return false;
-        }
-
-        try
-        {
-            var salt = Convert.FromBase64String(rawParts[1]);
-            var expectedHash = Convert.FromBase64String(rawParts[2]);
-
-            var computedHash = Rfc2898DeriveBytes.Pbkdf2(
-                Encoding.UTF8.GetBytes(password),
-                salt,
-                iterations,
-                HashAlgorithmName.SHA256,
-                expectedHash.Length);
-
-            return CryptographicOperations.FixedTimeEquals(computedHash, expectedHash);
-        }
-        catch
-        {
-            return false;
-        }
     }
 }

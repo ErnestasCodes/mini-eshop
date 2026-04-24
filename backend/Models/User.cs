@@ -6,6 +6,7 @@ public class User
     public string Name { get; set; } = "";
     public int Id { get; set; }
     public bool IsAdmin { get; set; }
+    public bool IsReadOnlyAdmin { get; set; }
     public string? Surname { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }
