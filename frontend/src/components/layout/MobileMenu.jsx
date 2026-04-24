@@ -1,6 +1,15 @@
 import { NAV_ITEMS } from "../../lib/storefront";
 import Button from "../ui/Button";
 
+function CloseIcon() {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 6l12 12" />
+            <path d="M18 6L6 18" />
+        </svg>
+    );
+}
+
 export default function MobileMenu({
     open,
     pathname,
@@ -29,11 +38,11 @@ export default function MobileMenu({
                         <div className="mt-2 text-2xl font-semibold tracking-tight">Mono Studio</div>
                     </div>
                     <button
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5"
                         onClick={onClose}
                         aria-label="Uždaryti mobilų meniu"
                     >
-                        ×
+                        <CloseIcon />
                     </button>
                 </div>
 

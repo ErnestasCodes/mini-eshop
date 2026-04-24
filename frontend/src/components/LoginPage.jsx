@@ -73,11 +73,15 @@ export default function LoginPage({ onLoginSuccess, onNavigate, defaultEmail = "
                 email.split("@")[0];
             const resolvedUserId = Number(userData?.userId ?? userData?.id ?? userData?.Id);
             const resolvedIsAdmin = toBooleanFlag(userData?.isAdmin ?? userData?.IsAdmin);
+            const resolvedIsReadOnlyAdmin = toBooleanFlag(
+                userData?.isReadOnlyAdmin ?? userData?.IsReadOnlyAdmin
+            );
 
             onLoginSuccess?.({
                 name: resolvedName,
                 userId: Number.isFinite(resolvedUserId) && resolvedUserId > 0 ? resolvedUserId : null,
                 isAdmin: resolvedIsAdmin,
+                isReadOnlyAdmin: resolvedIsReadOnlyAdmin,
             });
             setMessage("Prisijungimas sėkmingas.");
             onNavigate?.("/");

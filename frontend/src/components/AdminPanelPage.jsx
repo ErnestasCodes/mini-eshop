@@ -6,9 +6,7 @@ import EmptyState from "./ui/EmptyState";
 import Field from "./ui/Field";
 
 function parseDecimalInput(value) {
-    const normalized = String(value ?? "")
-        .trim()
-        .replace(",", ".");
+    const normalized = String(value ?? "").trim().replace(",", ".");
 
     if (!normalized) {
         return NaN;
@@ -44,6 +42,7 @@ export default function AdminPanelPage({
     onUpdate,
     onDelete,
     onAdminLogout,
+    isReadOnlyAdmin = false,
     loading = false,
     error = "",
 }) {
@@ -135,18 +134,25 @@ export default function AdminPanelPage({
 
     return (
         <div className="page-gap">
-            <section className="rounded-[36px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[30px] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-[var(--shadow-soft)] sm:rounded-[36px] sm:p-6">
                 <div className="flex flex-col gap-5 border-b border-[var(--border)] pb-6 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--foreground-subtle)]">
                             {BRAND_NAME} administravimas
                         </div>
-                        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[var(--foreground-strong)]">Produktų valdymas</h1>
+                        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--foreground-strong)] sm:text-4xl">
+                            Produktų valdymas
+                        </h1>
                         <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--foreground-muted)]">
                             Atnaujinkite kolekciją, koreguokite aprašymus ir prižiūrėkite modelių likutį vienoje vietoje.
                         </p>
                     </div>
-                    <Button variant="danger" onClick={onAdminLogout}>
+                    {isReadOnlyAdmin ? (
+                        <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 lg:mr-auto">
+                            Si seed administratoriaus paskyra turi tik perziuros teises. Produktu kurti, redaguoti ir trinti negalima.
+                        </div>
+                    ) : null}
+                    <Button variant="danger" block className="sm:w-auto" onClick={onAdminLogout}>
                         Atsijungti
                     </Button>
                 </div>
@@ -167,13 +173,14 @@ export default function AdminPanelPage({
                 </div>
             </section>
 
-            <form
-                className="rounded-[34px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-[var(--shadow-soft)]"
-                onSubmit={handleCreate}
-            >
+            <form className="rounded-[30px] border border-[var(--border)] bg-[var(--panel)] p-5 shadow-[var(--shadow-soft)] sm:rounded-[34px] sm:p-6" onSubmit={handleCreate}>
                 <div className="flex flex-col gap-2">
-                    <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--foreground-subtle)]">Naujas produktas</div>
-                    <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground-strong)]">Pridėti naują prekę</h2>
+                    <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--foreground-subtle)]">
+                        Naujas produktas
+                    </div>
+                    <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground-strong)]">
+                        Pridėti naują prekę
+                    </h2>
                 </div>
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
                     <Field
@@ -182,6 +189,7 @@ export default function AdminPanelPage({
                         placeholder="Pavadinimas"
                         value={createForm.productName}
                         onChange={(event) => setCreateForm((prev) => ({ ...prev, productName: event.target.value }))}
+                        disabled={isReadOnlyAdmin || loading}
                         required
                     />
                     <Field
@@ -192,6 +200,7 @@ export default function AdminPanelPage({
                         placeholder="Kaina"
                         value={createForm.price}
                         onChange={(event) => setCreateForm((prev) => ({ ...prev, price: event.target.value }))}
+                        disabled={isReadOnlyAdmin || loading}
                         required
                     />
                     <Field
@@ -201,6 +210,7 @@ export default function AdminPanelPage({
                         placeholder="Kiekis sandėlyje"
                         value={createForm.stock}
                         onChange={(event) => setCreateForm((prev) => ({ ...prev, stock: event.target.value }))}
+                        disabled={isReadOnlyAdmin || loading}
                         required
                     />
                     <Field
@@ -209,10 +219,11 @@ export default function AdminPanelPage({
                         placeholder="Aprašymas"
                         value={createForm.description}
                         onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))}
+                        disabled={isReadOnlyAdmin || loading}
                     />
                 </div>
 
-                <Button type="submit" className="mt-5" size="lg" disabled={loading}>
+                <Button type="submit" className="mt-5 w-full sm:w-auto" size="lg" disabled={loading || isReadOnlyAdmin}>
                     {loading ? "Vykdoma..." : "Pridėti produktą"}
                 </Button>
             </form>
@@ -243,18 +254,18 @@ export default function AdminPanelPage({
                         return (
                             <article
                                 key={productId}
-                                className="rounded-[30px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-[var(--shadow-soft)]"
+                                className="rounded-[26px] border border-[var(--border)] bg-[var(--panel)] p-4 shadow-[var(--shadow-soft)] sm:rounded-[30px] sm:p-6"
                             >
-                                <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                     <div>
                                         <div className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--foreground-subtle)]">
                                             Produkto ID #{productId}
                                         </div>
-                                        <div className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground-strong)]">
+                                        <div className="mt-2 break-words text-xl font-semibold tracking-tight text-[var(--foreground-strong)] sm:text-2xl">
                                             {draft.productName || "Be pavadinimo"}
                                         </div>
                                     </div>
-                                    <div className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-2 text-sm text-[var(--foreground-muted)]">
+                                    <div className="inline-flex max-w-full rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-2 text-sm text-[var(--foreground-muted)]">
                                         Likutis: {draft.stock || 0}
                                     </div>
                                 </div>
@@ -270,6 +281,7 @@ export default function AdminPanelPage({
                                                 [productId]: { ...draft, productName: event.target.value },
                                             }))
                                         }
+                                        disabled={isReadOnlyAdmin || loading}
                                     />
                                     <Field
                                         id={`product-price-${productId}`}
@@ -283,6 +295,7 @@ export default function AdminPanelPage({
                                                 [productId]: { ...draft, price: event.target.value },
                                             }))
                                         }
+                                        disabled={isReadOnlyAdmin || loading}
                                     />
                                     <Field
                                         id={`product-stock-${productId}`}
@@ -295,6 +308,7 @@ export default function AdminPanelPage({
                                                 [productId]: { ...draft, stock: event.target.value },
                                             }))
                                         }
+                                        disabled={isReadOnlyAdmin || loading}
                                     />
                                     <Field
                                         id={`product-description-${productId}`}
@@ -306,14 +320,21 @@ export default function AdminPanelPage({
                                                 [productId]: { ...draft, description: event.target.value },
                                             }))
                                         }
+                                        disabled={isReadOnlyAdmin || loading}
                                     />
                                 </div>
 
-                                <div className="mt-5 flex flex-wrap gap-3">
-                                    <Button onClick={() => handleUpdate(productId)} disabled={loading}>
+                                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                                    <Button block className="sm:w-auto" onClick={() => handleUpdate(productId)} disabled={loading || isReadOnlyAdmin}>
                                         Išsaugoti
                                     </Button>
-                                    <Button variant="danger" onClick={() => onDelete?.(productId)} disabled={loading}>
+                                    <Button
+                                        variant="danger"
+                                        block
+                                        className="sm:w-auto"
+                                        onClick={() => onDelete?.(productId)}
+                                        disabled={loading || isReadOnlyAdmin}
+                                    >
                                         Ištrinti
                                     </Button>
                                 </div>

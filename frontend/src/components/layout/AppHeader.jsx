@@ -10,6 +10,16 @@ function isNavActive(pathname, path) {
     return pathname === path;
 }
 
+function MenuIcon() {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M4 7h16" />
+            <path d="M4 12h16" />
+            <path d="M4 17h16" />
+        </svg>
+    );
+}
+
 export default function AppHeader({
     pathname,
     cartCount,
@@ -25,24 +35,28 @@ export default function AppHeader({
             <div className="border-b border-[rgba(255,255,255,0.08)] bg-[var(--foreground-strong)] text-white">
                 <div className="app-shell flex flex-col gap-1 py-2 text-xs sm:flex-row sm:items-center sm:justify-between">
                     <span>Nemokamas pristatymas nuo {FREE_SHIPPING_THRESHOLD} €.</span>
-                    <span className="text-slate-300">Minimalūs miesto siluetai kasdieniam stiliui.</span>
+                    <span className="hidden text-slate-300 sm:inline">Minimalūs miesto siluetai kasdieniam stiliui.</span>
                 </div>
             </div>
 
             <header className="sticky top-0 z-[90] border-b border-[var(--border)] bg-[rgba(244,247,251,0.86)] backdrop-blur-xl">
-                <div className="app-shell py-4">
-                    <div className="flex items-center justify-between gap-4">
+                <div className="app-shell py-3 sm:py-4">
+                    <div className="flex items-center justify-between gap-3 sm:gap-4">
                         <button
-                            className="flex items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]"
+                            className="flex min-w-0 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]"
                             onClick={() => onNavigate("/")}
                             aria-label="Grįžti į pradžią"
                         >
-                            <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[var(--foreground-strong)] text-sm font-semibold text-white">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-[var(--foreground-strong)] text-sm font-semibold text-white sm:h-12 sm:w-12 sm:rounded-[18px]">
                                 MS
                             </div>
-                            <div>
-                                <div className="text-lg font-semibold tracking-tight text-[var(--foreground-strong)]">{BRAND_NAME}</div>
-                                <div className="text-sm text-[var(--foreground-muted)]">{BRAND_TAGLINE}</div>
+                            <div className="min-w-0">
+                                <div className="truncate text-base font-semibold tracking-tight text-[var(--foreground-strong)] sm:text-lg">
+                                    {BRAND_NAME}
+                                </div>
+                                <div className="hidden truncate text-sm text-[var(--foreground-muted)] sm:block">
+                                    {BRAND_TAGLINE}
+                                </div>
                             </div>
                         </button>
 
@@ -106,7 +120,7 @@ export default function AppHeader({
                             )}
                         </div>
 
-                        <div className="flex items-center gap-2 lg:hidden">
+                        <div className="flex shrink-0 items-center gap-2 lg:hidden">
                             <button
                                 className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-white text-[var(--foreground-strong)] shadow-[var(--shadow-xs)] transition hover:bg-[var(--surface-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
                                 onClick={onOpenCart}
@@ -119,7 +133,7 @@ export default function AppHeader({
                                 onClick={onToggleMobileMenu}
                                 aria-label="Atidaryti mobilų meniu"
                             >
-                                <span className="text-lg">☰</span>
+                                <MenuIcon />
                             </button>
                         </div>
                     </div>

@@ -13,24 +13,24 @@ export default function EmptyState({
     return (
         <section
             className={cn(
-                "rounded-[32px] border border-[var(--border)] bg-[var(--panel)] px-6 py-12 text-center shadow-[var(--shadow-soft)]",
+                "rounded-[28px] border border-[var(--border)] bg-[var(--panel)] px-5 py-10 text-center shadow-[var(--shadow-soft)] sm:rounded-[32px] sm:px-6 sm:py-12",
                 className
             )}
         >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface-muted)] text-lg font-semibold text-[var(--foreground-strong)]">
                 MS
             </div>
-            <h3 className="mt-5 text-3xl font-semibold tracking-tight text-[var(--foreground-strong)]">{title}</h3>
+            <h3 className="mt-5 text-2xl font-semibold tracking-tight text-[var(--foreground-strong)] sm:text-3xl">{title}</h3>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-[var(--foreground-muted)]">{description}</p>
             {(actionLabel || secondaryLabel) && (
                 <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
                     {actionLabel && (
-                        <Button size="lg" onClick={onAction}>
+                        <Button size="lg" block className="sm:w-auto" onClick={onAction}>
                             {actionLabel}
                         </Button>
                     )}
                     {secondaryLabel && (
-                        <Button variant="secondary" size="lg" onClick={onSecondaryAction}>
+                        <Button variant="secondary" size="lg" block className="sm:w-auto" onClick={onSecondaryAction}>
                             {secondaryLabel}
                         </Button>
                     )}

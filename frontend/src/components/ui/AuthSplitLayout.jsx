@@ -10,8 +10,8 @@ export default function AuthSplitLayout({
     children,
 }) {
     return (
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--panel)] shadow-[var(--shadow-soft)] lg:grid lg:grid-cols-[minmax(320px,0.92fr)_minmax(0,1.08fr)]">
-            <aside className="relative overflow-hidden bg-[var(--foreground-strong)] px-8 py-10 text-white">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-[var(--border)] bg-[var(--panel)] shadow-[var(--shadow-soft)] sm:rounded-[34px] lg:grid lg:grid-cols-[minmax(320px,0.92fr)_minmax(0,1.08fr)]">
+            <aside className="relative overflow-hidden bg-[var(--foreground-strong)] px-5 py-8 text-white sm:px-8 sm:py-10">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(154,167,187,0.22),transparent_45%)]" />
                 <div className="absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,transparent,rgba(3,9,19,0.34))]" />
                 <div className="relative">
@@ -19,7 +19,7 @@ export default function AuthSplitLayout({
                         {BRAND_NAME}
                     </div>
                     <div className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{eyebrow}</div>
-                    <h1 className="mt-3 text-4xl font-semibold tracking-tight">{title}</h1>
+                    <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
                     <p className="mt-4 max-w-md text-sm leading-7 text-slate-300">{description}</p>
 
                     <div className="mt-8 space-y-3">
@@ -40,7 +40,7 @@ export default function AuthSplitLayout({
                 </div>
             </aside>
 
-            <div className="px-8 py-10 lg:px-10">{children}</div>
+            <div className="px-5 py-8 sm:px-8 sm:py-10 lg:px-10">{children}</div>
         </div>
     );
 }

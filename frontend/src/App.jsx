@@ -133,6 +133,7 @@ export default function App() {
                 onUpdate={app.handleAdminUpdateProduct}
                 onDelete={app.handleAdminDeleteProduct}
                 onAdminLogout={app.handleAdminLogout}
+                isReadOnlyAdmin={app.isReadOnlyAdmin}
                 loading={app.adminLoading}
                 error={app.adminError}
             />

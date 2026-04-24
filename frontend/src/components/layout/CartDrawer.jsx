@@ -16,17 +16,17 @@ function CartDrawerItem({
     const isBusy = deletingCartItemId === item.id || updatingCartItemId === item.id || isClearingCart;
 
     return (
-        <article className="rounded-[26px] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+        <article className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)] p-4 sm:rounded-[26px]">
             <div className="flex gap-3">
                 <img
                     src={product?.coverImage}
                     alt={product?.displayName ?? item.name}
-                    className="h-20 w-16 rounded-[18px] object-cover"
+                    className="h-20 w-16 shrink-0 rounded-[18px] object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                        <div>
-                            <div className="text-sm font-semibold text-[var(--foreground-strong)]">{item.name}</div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold text-[var(--foreground-strong)]">{item.name}</div>
                             <div className="mt-1 text-xs uppercase tracking-[0.2em] text-[var(--foreground-subtle)]">
                                 {product?.categoryLabel ?? "Collection"}
                             </div>
@@ -91,15 +91,19 @@ export default function CartDrawer({
                 onClick={onClose}
                 aria-label="Uždaryti krepšelį"
             />
-            <aside className="absolute right-0 top-0 flex h-full w-[min(100%,28rem)] flex-col border-l border-[var(--border)] bg-[var(--panel)] px-5 py-5 shadow-2xl sm:px-6">
+            <aside className="absolute right-0 top-0 flex h-full w-full max-w-[28rem] flex-col border-l border-[var(--border)] bg-[var(--panel)] px-4 py-4 shadow-2xl sm:px-6 sm:py-5">
                 <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] pb-5">
-                    <div>
-                        <div className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--foreground-subtle)]">Krepšelis</div>
-                        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground-strong)]">Jūsų krepšelis</h2>
+                    <div className="min-w-0">
+                        <div className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--foreground-subtle)]">
+                            Krepšelis
+                        </div>
+                        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground-strong)]">
+                            Jūsų krepšelis
+                        </h2>
                         <p className="mt-2 text-sm text-[var(--foreground-muted)]">{cartSummaryLabel}</p>
                     </div>
                     <button
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-white text-lg text-[var(--foreground-strong)]"
+                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-white text-lg text-[var(--foreground-strong)]"
                         onClick={onClose}
                         aria-label="Uždaryti krepšelį"
                     >
@@ -141,22 +145,23 @@ export default function CartDrawer({
                         </div>
 
                         <div className="border-t border-[var(--border)] pt-5">
-                            <div className="rounded-[28px] border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+                            <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface-muted)] p-4 sm:rounded-[28px]">
                                 <div className="flex items-center justify-between text-sm text-[var(--foreground-muted)]">
                                     <span>Tarpinė suma</span>
                                     <span className="font-semibold text-[var(--foreground-strong)]">{formatPrice(cartTotal)}</span>
                                 </div>
-                        <div className="mt-2 flex items-center justify-between text-sm text-[var(--foreground-muted)]">
-                            <span>Pristatymas</span>
-                            <span className="font-semibold text-[var(--foreground-strong)]">
-                                {cartTotal > 0 ? "Skaičiuojama apmokėjimo metu" : "-"}
-                            </span>
-                        </div>
-                    </div>
+                                <div className="mt-2 flex items-center justify-between text-sm text-[var(--foreground-muted)]">
+                                    <span>Pristatymas</span>
+                                    <span className="font-semibold text-[var(--foreground-strong)]">
+                                        {cartTotal > 0 ? "Skaičiuojama apmokėjimo metu" : "-"}
+                                    </span>
+                                </div>
+                            </div>
 
                             <div className="mt-4 flex flex-col gap-3">
                                 <Button
                                     size="lg"
+                                    block
                                     onClick={() => {
                                         onGoToCart();
                                         onClose();
@@ -164,10 +169,15 @@ export default function CartDrawer({
                                 >
                                     Peržiūrėti krepšelį
                                 </Button>
-                                <Button variant="secondary" size="lg" onClick={onBrowseProducts}>
+                                <Button variant="secondary" size="lg" block onClick={onBrowseProducts}>
                                     Tęsti apsipirkimą
                                 </Button>
-                                <Button variant="ghost" onClick={onClear} disabled={isClearingCart || updatingCartItemId !== null}>
+                                <Button
+                                    variant="ghost"
+                                    block
+                                    onClick={onClear}
+                                    disabled={isClearingCart || updatingCartItemId !== null}
+                                >
                                     {isClearingCart ? "Valoma..." : "Išvalyti krepšelį"}
                                 </Button>
                             </div>

@@ -43,6 +43,10 @@ function readStoredAdminFlag() {
     return localStorage.getItem("myshop_is_admin") === "1";
 }
 
+function readStoredReadOnlyAdminFlag() {
+    return localStorage.getItem("myshop_is_readonly_admin") === "1";
+}
+
 function toBooleanFlag(value) {
     if (typeof value === "boolean") {
         return value;
@@ -77,6 +81,9 @@ export default function useStorefrontApp() {
     const [pendingEmail, setPendingEmail] = useState(() => localStorage.getItem("myshop_pending_email") ?? "");
     const [pathname, setPathname] = useState(() => window.location.pathname);
     const [isAdmin, setIsAdmin] = useState(() => readStoredUserId() > 0 && readStoredAdminFlag());
+    const [isReadOnlyAdmin, setIsReadOnlyAdmin] = useState(
+        () => readStoredUserId() > 0 && readStoredReadOnlyAdminFlag()
+    );
     const [adminError, setAdminError] = useState("");
     const [adminLoading, setAdminLoading] = useState(false);
     const [deletingCartItemId, setDeletingCartItemId] = useState(null);
@@ -88,6 +95,7 @@ export default function useStorefrontApp() {
     const deferredSearchQuery = useDeferredValue(searchQuery);
     const isLoggedIn = userId > 0;
     const canAccessAdmin = isLoggedIn && isAdmin;
+    const canManageAdminCatalog = canAccessAdmin && !isReadOnlyAdmin;
     const shouldShowStartupLoader = isLoadingProducts && !hasCompletedInitialProductsLoad;
 
     const catalogProducts = useMemo(
@@ -355,14 +363,22 @@ export default function useStorefrontApp() {
         }
     }
 
-    function saveAdminSession(nextIsAdmin) {
+    function saveAdminSession(nextIsAdmin, nextIsReadOnlyAdmin = false) {
         const value = Boolean(nextIsAdmin);
+        const readOnlyValue = value && Boolean(nextIsReadOnlyAdmin);
         setIsAdmin(value);
+        setIsReadOnlyAdmin(readOnlyValue);
 
         if (value) {
             localStorage.setItem("myshop_is_admin", "1");
         } else {
             localStorage.removeItem("myshop_is_admin");
+        }
+
+        if (readOnlyValue) {
+            localStorage.setItem("myshop_is_readonly_admin", "1");
+        } else {
+            localStorage.removeItem("myshop_is_readonly_admin");
         }
     }
 
@@ -417,6 +433,10 @@ export default function useStorefrontApp() {
     }
 
     async function handleAdminCreateProduct(payload) {
+        if (!canManageAdminCatalog && canAccessAdmin) {
+            setAdminError("Si administratoriaus paskyra turi tik perziuros teises.");
+            return false;
+        }
         if (!canAccessAdmin) {
             setAdminError("Produktų valdymas leidžiamas tik administratoriui.");
             return false;
@@ -430,6 +450,7 @@ export default function useStorefrontApp() {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "X-User-Id": String(userId),
                 },
                 body: JSON.stringify(payload),
             });
@@ -451,6 +472,10 @@ export default function useStorefrontApp() {
     }
 
     async function handleAdminUpdateProduct(id, payload) {
+        if (!canManageAdminCatalog && canAccessAdmin) {
+            setAdminError("Si administratoriaus paskyra turi tik perziuros teises.");
+            return false;
+        }
         if (!canAccessAdmin) {
             setAdminError("Produktų valdymas leidžiamas tik administratoriui.");
             return false;
@@ -464,6 +489,7 @@ export default function useStorefrontApp() {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
+                    "X-User-Id": String(userId),
                 },
                 body: JSON.stringify(payload),
             });
@@ -485,6 +511,10 @@ export default function useStorefrontApp() {
     }
 
     async function handleAdminDeleteProduct(id) {
+        if (!canManageAdminCatalog && canAccessAdmin) {
+            setAdminError("Si administratoriaus paskyra turi tik perziuros teises.");
+            return false;
+        }
         if (!canAccessAdmin) {
             setAdminError("Produktų valdymas leidžiamas tik administratoriui.");
             return false;
@@ -496,6 +526,9 @@ export default function useStorefrontApp() {
         try {
             const response = await fetch(`${apiBaseUrl}/api/products/Produktai/${id}`, {
                 method: "DELETE",
+                headers: {
+                    "X-User-Id": String(userId),
+                },
             });
 
             if (!response.ok) {
@@ -939,6 +972,7 @@ export default function useStorefrontApp() {
         pendingEmail,
         userName,
         isAdmin,
+        isReadOnlyAdmin,
         canAccessAdmin,
         adminError,
         adminLoading,
@@ -979,10 +1013,13 @@ export default function useStorefrontApp() {
             const nextUserName = typeof payload === "string" ? payload : nextUser?.name;
             const nextUserId = nextUser?.userId ?? nextUser?.id ?? null;
             const nextIsAdmin = toBooleanFlag(nextUser?.isAdmin ?? nextUser?.admin);
+            const nextIsReadOnlyAdmin = toBooleanFlag(
+                nextUser?.isReadOnlyAdmin ?? nextUser?.readOnlyAdmin
+            );
 
             saveUserName(nextUserName);
             saveUserId(nextUserId);
-            saveAdminSession(nextIsAdmin);
+            saveAdminSession(nextIsAdmin, nextIsReadOnlyAdmin);
             setAdminError("");
             setPendingEmail("");
             localStorage.removeItem("myshop_pending_email");
