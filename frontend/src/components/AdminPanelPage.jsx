@@ -1,5 +1,32 @@
 import { useMemo, useState } from "react";
 
+import { BRAND_NAME, formatPrice } from "../lib/storefront";
+import Button from "./ui/Button";
+import EmptyState from "./ui/EmptyState";
+import Field from "./ui/Field";
+
+function parseDecimalInput(value) {
+    const normalized = String(value ?? "")
+        .trim()
+        .replace(",", ".");
+
+    if (!normalized) {
+        return NaN;
+    }
+
+    return Number(normalized);
+}
+
+function parseIntegerInput(value) {
+    const normalized = String(value ?? "").trim();
+
+    if (!normalized) {
+        return NaN;
+    }
+
+    return Number(normalized);
+}
+
 function normalizeProduct(product) {
     const id = Number(product.productId ?? product.id);
     return {
@@ -27,183 +54,274 @@ export default function AdminPanelPage({
         description: "",
     });
     const [drafts, setDrafts] = useState({});
+    const [localError, setLocalError] = useState("");
 
     const sortedProducts = useMemo(
         () => [...products].sort((a, b) => Number(a.productId ?? a.id) - Number(b.productId ?? b.id)),
         [products]
     );
+    const productCount = sortedProducts.length;
+    const activeCount = sortedProducts.filter((product) => Number(product.stock ?? 0) > 0).length;
+    const stockValue = sortedProducts.reduce(
+        (sum, product) => sum + Number(product.price ?? 0) * Number(product.stock ?? 0),
+        0
+    );
 
-    async function handleCreate(e) {
-        e.preventDefault();
+    async function handleCreate(event) {
+        event.preventDefault();
 
-        await onCreate?.({
-            productName: createForm.productName.trim(),
-            price: Number(createForm.price),
-            stock: Number(createForm.stock),
+        const productName = createForm.productName.trim();
+        const price = parseDecimalInput(createForm.price);
+        const stock = parseIntegerInput(createForm.stock);
+
+        if (!productName) {
+            setLocalError("Įveskite produkto pavadinimą.");
+            return;
+        }
+
+        if (!Number.isFinite(price) || price < 0) {
+            setLocalError("Įveskite teisingą kainą. Naudokite skaičius, pvz. 49.99 arba 49,99.");
+            return;
+        }
+
+        if (!Number.isInteger(stock) || stock < 0) {
+            setLocalError("Įveskite teisingą likutį. Naudokite sveiką skaičių.");
+            return;
+        }
+
+        setLocalError("");
+
+        const success = await onCreate?.({
+            productName,
+            price,
+            stock,
             description: createForm.description.trim(),
         });
 
-        setCreateForm({
-            productName: "",
-            price: "",
-            stock: "",
-            description: "",
-        });
+        if (success) {
+            setCreateForm({
+                productName: "",
+                price: "",
+                stock: "",
+                description: "",
+            });
+        }
     }
 
     async function handleUpdate(productId) {
         const draft = drafts[productId];
-        if (!draft) return;
+        if (!draft) {
+            return;
+        }
+
+        const productName = draft.productName.trim();
+        const price = parseDecimalInput(draft.price);
+        const stock = parseIntegerInput(draft.stock);
+
+        if (!productName || !Number.isFinite(price) || price < 0 || !Number.isInteger(stock) || stock < 0) {
+            setLocalError("Patikrinkite pavadinimą, kainą ir likutį prieš saugodami pakeitimus.");
+            return;
+        }
+
+        setLocalError("");
 
         await onUpdate?.(productId, {
-            productName: draft.productName.trim(),
-            price: Number(draft.price),
-            stock: Number(draft.stock),
+            productName,
+            price,
+            stock,
             description: draft.description.trim(),
         });
     }
 
     return (
-        <div className="space-y-6">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="page-gap">
+            <section className="rounded-[36px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-[var(--shadow-soft)]">
+                <div className="flex flex-col gap-5 border-b border-[var(--border)] pb-6 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Administravimas</div>
-                        <h2 className="mt-2 text-3xl font-semibold text-slate-900">Produktu valdymas</h2>
-                        <p className="mt-2 text-sm text-slate-600">Kurti, redaguoti ir salinti prekes viename puslapyje.</p>
+                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--foreground-subtle)]">
+                            {BRAND_NAME} administravimas
+                        </div>
+                        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[var(--foreground-strong)]">Produktų valdymas</h1>
+                        <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--foreground-muted)]">
+                            Atnaujinkite kolekciją, koreguokite aprašymus ir prižiūrėkite modelių likutį vienoje vietoje.
+                        </p>
                     </div>
-                    <button
-                        className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-                        onClick={onAdminLogout}
-                    >
-                        Admin atsijungti
-                    </button>
+                    <Button variant="danger" onClick={onAdminLogout}>
+                        Atsijungti
+                    </Button>
                 </div>
-            </div>
 
-            <form className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm" onSubmit={handleCreate}>
-                <h3 className="text-xl font-semibold text-slate-900">Prideti nauja preke</h3>
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                    <div className="rounded-[26px] border border-[var(--border)] bg-[var(--surface-muted)] px-5 py-4">
+                        <div className="text-xs uppercase tracking-[0.2em] text-[var(--foreground-subtle)]">Produktai</div>
+                        <div className="mt-2 text-3xl font-semibold tracking-tight text-[var(--foreground-strong)]">{productCount}</div>
+                    </div>
+                    <div className="rounded-[26px] border border-[var(--border)] bg-[var(--surface-muted)] px-5 py-4">
+                        <div className="text-xs uppercase tracking-[0.2em] text-[var(--foreground-subtle)]">Turime vietoje</div>
+                        <div className="mt-2 text-3xl font-semibold tracking-tight text-[var(--foreground-strong)]">{activeCount}</div>
+                    </div>
+                    <div className="rounded-[26px] border border-[var(--border)] bg-[var(--surface-muted)] px-5 py-4">
+                        <div className="text-xs uppercase tracking-[0.2em] text-[var(--foreground-subtle)]">Inventoriaus vertė</div>
+                        <div className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground-strong)]">{formatPrice(stockValue)}</div>
+                    </div>
+                </div>
+            </section>
+
+            <form
+                className="rounded-[34px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-[var(--shadow-soft)]"
+                onSubmit={handleCreate}
+            >
+                <div className="flex flex-col gap-2">
+                    <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--foreground-subtle)]">Naujas produktas</div>
+                    <h2 className="text-2xl font-semibold tracking-tight text-[var(--foreground-strong)]">Pridėti naują prekę</h2>
+                </div>
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
-                    <input
-                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
+                    <Field
+                        id="create-product-name"
+                        label="Pavadinimas"
                         placeholder="Pavadinimas"
                         value={createForm.productName}
-                        onChange={(e) => setCreateForm((prev) => ({ ...prev, productName: e.target.value }))}
+                        onChange={(event) => setCreateForm((prev) => ({ ...prev, productName: event.target.value }))}
                         required
                     />
-                    <input
-                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                        placeholder="Kaina"
+                    <Field
+                        id="create-product-price"
+                        label="Kaina"
                         type="number"
                         step="0.01"
+                        placeholder="Kaina"
                         value={createForm.price}
-                        onChange={(e) => setCreateForm((prev) => ({ ...prev, price: e.target.value }))}
+                        onChange={(event) => setCreateForm((prev) => ({ ...prev, price: event.target.value }))}
                         required
                     />
-                    <input
-                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                        placeholder="Kiekis sandelyje"
+                    <Field
+                        id="create-product-stock"
+                        label="Likutis"
                         type="number"
+                        placeholder="Kiekis sandėlyje"
                         value={createForm.stock}
-                        onChange={(e) => setCreateForm((prev) => ({ ...prev, stock: e.target.value }))}
+                        onChange={(event) => setCreateForm((prev) => ({ ...prev, stock: event.target.value }))}
                         required
                     />
-                    <input
-                        className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                        placeholder="Aprasymas"
+                    <Field
+                        id="create-product-description"
+                        label="Aprašymas"
+                        placeholder="Aprašymas"
                         value={createForm.description}
-                        onChange={(e) => setCreateForm((prev) => ({ ...prev, description: e.target.value }))}
+                        onChange={(event) => setCreateForm((prev) => ({ ...prev, description: event.target.value }))}
                     />
                 </div>
 
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="mt-5 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                >
-                    {loading ? "Vykdoma..." : "Prideti preke"}
-                </button>
+                <Button type="submit" className="mt-5" size="lg" disabled={loading}>
+                    {loading ? "Vykdoma..." : "Pridėti produktą"}
+                </Button>
             </form>
 
-            {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {localError ? (
+                <div className="rounded-[24px] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+                    Klaida: {localError}
+                </div>
+            ) : null}
+
+            {error ? (
+                <div className="rounded-[24px] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
                     Klaida: {error}
                 </div>
+            ) : null}
+
+            {sortedProducts.length === 0 ? (
+                <EmptyState
+                    title="Produktų dar nėra"
+                    description="Pridėkite pirmuosius modelius ir suformuokite Mono Studio kolekciją."
+                />
+            ) : (
+                <div className="grid gap-4">
+                    {sortedProducts.map((product) => {
+                        const productId = Number(product.productId ?? product.id);
+                        const draft = drafts[productId] ?? normalizeProduct(product);
+
+                        return (
+                            <article
+                                key={productId}
+                                className="rounded-[30px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-[var(--shadow-soft)]"
+                            >
+                                <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                    <div>
+                                        <div className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--foreground-subtle)]">
+                                            Produkto ID #{productId}
+                                        </div>
+                                        <div className="mt-2 text-2xl font-semibold tracking-tight text-[var(--foreground-strong)]">
+                                            {draft.productName || "Be pavadinimo"}
+                                        </div>
+                                    </div>
+                                    <div className="rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-2 text-sm text-[var(--foreground-muted)]">
+                                        Likutis: {draft.stock || 0}
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <Field
+                                        id={`product-name-${productId}`}
+                                        label="Pavadinimas"
+                                        value={draft.productName}
+                                        onChange={(event) =>
+                                            setDrafts((prev) => ({
+                                                ...prev,
+                                                [productId]: { ...draft, productName: event.target.value },
+                                            }))
+                                        }
+                                    />
+                                    <Field
+                                        id={`product-price-${productId}`}
+                                        label="Kaina"
+                                        type="number"
+                                        step="0.01"
+                                        value={draft.price}
+                                        onChange={(event) =>
+                                            setDrafts((prev) => ({
+                                                ...prev,
+                                                [productId]: { ...draft, price: event.target.value },
+                                            }))
+                                        }
+                                    />
+                                    <Field
+                                        id={`product-stock-${productId}`}
+                                        label="Likutis"
+                                        type="number"
+                                        value={draft.stock}
+                                        onChange={(event) =>
+                                            setDrafts((prev) => ({
+                                                ...prev,
+                                                [productId]: { ...draft, stock: event.target.value },
+                                            }))
+                                        }
+                                    />
+                                    <Field
+                                        id={`product-description-${productId}`}
+                                        label="Aprašymas"
+                                        value={draft.description}
+                                        onChange={(event) =>
+                                            setDrafts((prev) => ({
+                                                ...prev,
+                                                [productId]: { ...draft, description: event.target.value },
+                                            }))
+                                        }
+                                    />
+                                </div>
+
+                                <div className="mt-5 flex flex-wrap gap-3">
+                                    <Button onClick={() => handleUpdate(productId)} disabled={loading}>
+                                        Išsaugoti
+                                    </Button>
+                                    <Button variant="danger" onClick={() => onDelete?.(productId)} disabled={loading}>
+                                        Ištrinti
+                                    </Button>
+                                </div>
+                            </article>
+                        );
+                    })}
+                </div>
             )}
-
-            <div className="space-y-4">
-                {sortedProducts.map((p) => {
-                    const productId = Number(p.productId ?? p.id);
-                    const draft = drafts[productId] ?? normalizeProduct(p);
-
-                    return (
-                        <div key={productId} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                            <div className="mb-4 text-sm font-medium text-slate-500">Prekes ID #{productId}</div>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <input
-                                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                                    value={draft.productName}
-                                    onChange={(e) =>
-                                        setDrafts((prev) => ({
-                                            ...prev,
-                                            [productId]: { ...draft, productName: e.target.value },
-                                        }))
-                                    }
-                                />
-                                <input
-                                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                                    type="number"
-                                    step="0.01"
-                                    value={draft.price}
-                                    onChange={(e) =>
-                                        setDrafts((prev) => ({
-                                            ...prev,
-                                            [productId]: { ...draft, price: e.target.value },
-                                        }))
-                                    }
-                                />
-                                <input
-                                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                                    type="number"
-                                    value={draft.stock}
-                                    onChange={(e) =>
-                                        setDrafts((prev) => ({
-                                            ...prev,
-                                            [productId]: { ...draft, stock: e.target.value },
-                                        }))
-                                    }
-                                />
-                                <input
-                                    className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                                    value={draft.description}
-                                    onChange={(e) =>
-                                        setDrafts((prev) => ({
-                                            ...prev,
-                                            [productId]: { ...draft, description: e.target.value },
-                                        }))
-                                    }
-                                />
-                            </div>
-                            <div className="mt-5 flex flex-wrap gap-3">
-                                <button
-                                    className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                                    onClick={() => handleUpdate(productId)}
-                                    disabled={loading}
-                                >
-                                    Issaugoti
-                                </button>
-                                <button
-                                    className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                    onClick={() => onDelete?.(productId)}
-                                    disabled={loading}
-                                >
-                                    Istrinti
-                                </button>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
         </div>
     );
 }

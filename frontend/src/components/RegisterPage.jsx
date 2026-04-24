@@ -1,5 +1,11 @@
 import { useMemo, useState } from "react";
 
+import AuthSplitLayout from "./ui/AuthSplitLayout";
+import Button from "./ui/Button";
+import Field from "./ui/Field";
+
+const PROMISES = ["Greita registracija", "Išsaugotas krepšelis", "Patogus apsipirkimas"];
+
 export default function RegisterPage({ onRegistered, onNavigate }) {
     const [form, setForm] = useState({
         name: "",
@@ -15,8 +21,8 @@ export default function RegisterPage({ onRegistered, onNavigate }) {
         return `${base}/api/users`;
     }, []);
 
-    async function handleSubmit(e) {
-        e.preventDefault();
+    async function handleSubmit(event) {
+        event.preventDefault();
         setError("");
         setSuccess("");
         setLoading(true);
@@ -41,12 +47,12 @@ export default function RegisterPage({ onRegistered, onNavigate }) {
 
             const registeredName = form.name.trim();
             const registeredEmail = form.email.trim();
-            setSuccess("Registracija sekminga. Perkeliama i prisijungima...");
+            setSuccess("Registracija sėkminga. Perkeliama į prisijungimą...");
             onRegistered?.({ name: registeredName, email: registeredEmail });
             setForm({ name: "", email: "", password: "" });
             onNavigate?.("/login");
-        } catch (err) {
-            setError(String(err.message || err));
+        } catch (nextError) {
+            setError(String(nextError.message || nextError));
         } finally {
             setLoading(false);
         }
@@ -57,91 +63,70 @@ export default function RegisterPage({ onRegistered, onNavigate }) {
     }
 
     return (
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm lg:grid lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.1fr)]">
-            <div className="border-b border-slate-200 bg-slate-50 p-8 lg:border-b-0 lg:border-r">
-                <div className="text-xs uppercase tracking-[0.22em] text-slate-500">Nauja paskyra</div>
-                <h2 className="mt-4 text-3xl font-semibold text-slate-900">Registracija</h2>
-                <p className="mt-4 text-sm leading-7 text-slate-600">
-                    Susikurkite paskyra, kad parduotuve veiktu kaip normalus pirkimo srautas:
-                    prisijungimas, krepselis ir uzsakymo pradzia vienoje vietoje.
+        <AuthSplitLayout
+            eyebrow="Nauja paskyra"
+            title="Susikurkite paskyrą"
+            description="Išsaugokite savo pasirinkimus ir grįžkite prie mėgstamų modelių kada panorėję."
+            highlights={PROMISES}
+            insightTitle="Patogus apsipirkimas"
+            insightBody="Paskyra leidžia patogiau sekti pasirinktus modelius ir tęsti apsipirkimą savu tempu."
+        >
+            <div className="max-w-lg">
+                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--foreground-subtle)]">Registracija</div>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--foreground-strong)]">Jūsų duomenys</h2>
+                <p className="mt-3 text-sm leading-7 text-[var(--foreground-muted)]">
+                    Užpildykite laukus ir susikurkite paskyrą.
                 </p>
-            </div>
-
-            <div className="p-8">
-                <h3 className="text-2xl font-semibold text-slate-900">Jusu duomenys</h3>
-                <p className="mt-2 text-sm text-slate-500">Uzpildykite laukus ir susikurkite paskyra.</p>
 
                 <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="name">
-                            Vardas
-                        </label>
-                        <input
-                            id="name"
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                            placeholder="Iveskite varda"
-                            value={form.name}
-                            onChange={(e) => updateField("name", e.target.value)}
-                            required
-                        />
-                    </div>
+                    <Field
+                        id="register-name"
+                        label="Vardas"
+                        placeholder="Įveskite vardą"
+                        value={form.name}
+                        onChange={(event) => updateField("name", event.target.value)}
+                        required
+                    />
+                    <Field
+                        id="register-email"
+                        type="email"
+                        label="El. paštas"
+                        placeholder="vardas@pastas.lt"
+                        value={form.email}
+                        onChange={(event) => updateField("email", event.target.value)}
+                        required
+                    />
+                    <Field
+                        id="register-password"
+                        type="password"
+                        label="Slaptažodis"
+                        placeholder="Įveskite slaptažodį"
+                        value={form.password}
+                        onChange={(event) => updateField("password", event.target.value)}
+                        required
+                    />
 
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="email">
-                            El. pastas
-                        </label>
-                        <input
-                            id="email"
-                            type="email"
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                            placeholder="vardas@email.com"
-                            value={form.email}
-                            onChange={(e) => updateField("email", e.target.value)}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="password">
-                            Slaptazodis
-                        </label>
-                        <input
-                            id="password"
-                            type="password"
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                            placeholder="Iveskite slaptazodi"
-                            value={form.password}
-                            onChange={(e) => updateField("password", e.target.value)}
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                    >
+                    <Button type="submit" size="lg" block disabled={loading}>
                         {loading ? "Registruojama..." : "Registruotis"}
-                    </button>
+                    </Button>
                 </form>
 
-                {error && (
-                    <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {error ? (
+                    <div className="mt-5 rounded-[24px] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
                         Klaida: {error}
                     </div>
-                )}
+                ) : null}
 
-                {success && (
-                    <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+                {success ? (
+                    <div className="mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
                         {success}
                     </div>
-                )}
+                ) : null}
 
-                <button
-                    className="mt-5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                    onClick={() => onNavigate?.("/")}
-                >
-                    Grizti i parduotuve
-                </button>
+                <Button variant="secondary" size="lg" block className="mt-5" onClick={() => onNavigate?.("/")}>
+                    Grįžti į pradžią
+                </Button>
             </div>
-        </div>
+        </AuthSplitLayout>
     );
 }

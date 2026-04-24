@@ -1,117 +1,183 @@
 import { useMemo, useState } from "react";
 
-function formatPrice(value) {
-    return `${Number(value ?? 0).toFixed(2)} EUR`;
-}
+import { BRAND_NAME, formatPrice, getBadgeTone, getStockSummary, PRODUCT_DETAIL_POINTS } from "../lib/storefront";
+import Button from "./ui/Button";
+import EmptyState from "./ui/EmptyState";
+import ProductCardSkeleton from "./ui/ProductCardSkeleton";
 
-export default function ProductDetailsPage({ product, onAddToCart, onNavigate, canAddToCart = true }) {
+export default function ProductDetailsPage({
+    product,
+    loading = false,
+    onNavigate,
+    onAddToCart,
+    onRequireLogin,
+    canAddToCart = true,
+}) {
     const [added, setAdded] = useState(false);
 
     const description = useMemo(() => {
-        if (!product) return "";
+        if (!product) {
+            return "";
+        }
+
         return (
+            product.displayDescription ||
             product.description ||
             product.productDescription ||
-            "Produkto aprasymas siuo metu nepridetas."
+            "Produkto aprašymas šiuo metu nepridėtas."
         );
     }, [product]);
 
+    if (loading && !product) {
+        return (
+            <div className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(340px,0.95fr)]">
+                    <div className="overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-[var(--shadow-soft)]">
+                        <div className="h-[520px] animate-pulse rounded-[28px] bg-[var(--surface-muted)]" />
+                    </div>
+                    <ProductCardSkeleton />
+                </div>
+            </div>
+        );
+    }
+
     if (!product) {
         return (
-            <div className="mx-auto max-w-4xl rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm">
-                <div className="text-lg font-semibold text-slate-900">Produktas nerastas</div>
-                <p className="mt-2 text-sm text-slate-600">Patikrinkite nuoroda arba grizkite i kataloga.</p>
-                <button
-                    className="mt-6 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                    onClick={() => onNavigate?.("/")}
-                >
-                    Grizti i prekes
-                </button>
-            </div>
+            <EmptyState
+                title="Produktas nerastas"
+                description={`Patikrinkite nuorodą arba grįžkite į ${BRAND_NAME} katalogą ir peržiūrėkite visą kolekciją.`}
+                actionLabel="Grįžti į katalogą"
+                onAction={() => onNavigate?.("/products")}
+            />
         );
     }
 
     const stock = Number(product.stock ?? 0);
     const isOutOfStock = !Number.isFinite(stock) || stock <= 0;
+    const stockSummary = getStockSummary(stock);
 
     return (
-        <div className="mx-auto max-w-6xl space-y-6">
-            <div className="text-sm text-slate-500">
-                <button className="transition hover:text-slate-900" onClick={() => onNavigate?.("/")}>
-                    Parduotuve
+        <div className="space-y-6">
+            <nav className="flex flex-wrap items-center gap-2 text-sm text-[var(--foreground-muted)]" aria-label="Breadcrumb">
+                <button className="transition hover:text-[var(--foreground-strong)]" onClick={() => onNavigate?.("/")}>
+                    Pradžia
                 </button>
-                <span className="mx-2">/</span>
-                <span className="text-slate-700">{product.productName || "Produktas"}</span>
-            </div>
+                <span>/</span>
+                <button
+                    className="transition hover:text-[var(--foreground-strong)]"
+                    onClick={() => onNavigate?.("/products")}
+                >
+                    Katalogas
+                </button>
+                <span>/</span>
+                <span className="text-[var(--foreground-strong)]">{product.displayName || product.productName || "Produktas"}</span>
+            </nav>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm">
-                    <div className="flex h-full items-center justify-center rounded-[24px] border border-slate-200 bg-slate-50 p-8">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.02fr)_minmax(340px,0.98fr)]">
+                <section className="overflow-hidden rounded-[34px] border border-[var(--border)] bg-[var(--panel)] shadow-[var(--shadow-soft)]">
+                    <div className="border-b border-[var(--border)] bg-[var(--surface-muted)] px-6 py-5">
+                        <div className="flex flex-wrap gap-2">
+                            {product.badges?.map((badge) => (
+                                <span
+                                    key={badge}
+                                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getBadgeTone(badge)}`}
+                                >
+                                    {badge}
+                                </span>
+                            ))}
+                            <span className="rounded-full border border-[var(--border)] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--foreground-muted)]">
+                                {product.categoryLabel || "Apranga"}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="p-6 lg:p-8">
                         <img
-                            src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png"
-                            alt={product.productName || "product"}
-                            className="h-72 w-full object-contain"
+                            src={product.coverImage}
+                            alt={product.displayName || product.productName || "produktas"}
+                            className="h-[520px] w-full rounded-[28px] object-cover"
                         />
                     </div>
-                </div>
+                </section>
 
-                <div className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm">
-                    <span
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                            isOutOfStock
-                                ? "bg-red-50 text-red-600"
-                                : stock <= 5
-                                  ? "bg-amber-50 text-amber-700"
-                                  : "bg-emerald-50 text-emerald-700"
-                        }`}
-                    >
-                        {isOutOfStock ? "Neturime sandelyje" : stock <= 5 ? `Likutis: ${stock}` : "Turime vietoje"}
-                    </span>
-
-                    <h1 className="mt-4 text-3xl font-semibold text-slate-900">{product.productName || "Produktas"}</h1>
-                    <div className="mt-2 text-sm text-slate-500">Prekes kodas #{product.productId ?? product.id}</div>
-                    <div className="mt-6 text-4xl font-semibold text-slate-900">{formatPrice(product.price)}</div>
-
-                    <div className="mt-6 border-t border-slate-200 pt-6">
-                        <div className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Aprasymas</div>
-                        <p className="mt-3 text-sm leading-7 text-slate-600">{description}</p>
+                <aside className="rounded-[34px] border border-[var(--border)] bg-[var(--panel)] p-7 shadow-[var(--shadow-soft)] lg:sticky lg:top-28 lg:self-start">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--foreground-subtle)]">
+                        {product.editorialTag || "Mono Studio"}
                     </div>
+                    <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[var(--foreground-strong)]">
+                        {product.displayName || product.productName || "Produktas"}
+                    </h1>
+                    <p className="mt-4 text-sm leading-7 text-[var(--foreground-muted)]">{description}</p>
 
-                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Pristatymas</div>
-                            <div className="mt-2 text-sm font-semibold text-slate-900">1-3 darbo dienos</div>
-                        </div>
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Apmokejimas</div>
-                            <div className="mt-2 text-sm font-semibold text-slate-900">Saugus atsiskaitymas</div>
+                    <div className="mt-6 rounded-[28px] border border-[var(--border)] bg-[var(--surface-muted)] px-5 py-5">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--foreground-subtle)]">
+                                    Kaina
+                                </div>
+                                <div className="mt-2 text-4xl font-semibold tracking-tight text-[var(--foreground-strong)]">
+                                    {formatPrice(product.price)}
+                                </div>
+                            </div>
+                            <div className={`rounded-full border px-3 py-1 text-sm font-semibold ${stockSummary.surface}`}>
+                                {stockSummary.label}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                        {canAddToCart && (
-                            <button
-                                className="flex-1 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                                onClick={async () => {
-                                    const success = await onAddToCart?.();
-                                    setAdded(Boolean(success));
-                                }}
-                                disabled={isOutOfStock}
-                            >
-                                {isOutOfStock ? "Prekes siuo metu nera" : "Deti i krepseli"}
-                            </button>
-                        )}
+                    <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                        {PRODUCT_DETAIL_POINTS.map((item) => (
+                            <div key={item.title} className="rounded-[24px] border border-[var(--border)] bg-white px-4 py-4">
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--foreground-subtle)]">
+                                    {item.title}
+                                </div>
+                                <div className="mt-2 text-sm font-semibold text-[var(--foreground-strong)]">{item.value}</div>
+                            </div>
+                        ))}
+                    </div>
 
-                        <button
-                            className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                            onClick={() => onNavigate?.("/")}
+                    <div className="mt-8 flex flex-col gap-3">
+                        <Button
+                            size="lg"
+                            onClick={async () => {
+                                setAdded(false);
+
+                                if (!canAddToCart) {
+                                    onRequireLogin?.();
+                                    return;
+                                }
+
+                                const success = await onAddToCart?.();
+                                setAdded(Boolean(success));
+                            }}
+                            disabled={isOutOfStock && canAddToCart}
                         >
-                            Grizti i kataloga
-                        </button>
+                            {!canAddToCart
+                                ? "Prisijungti apsipirkimui"
+                                : isOutOfStock
+                                  ? "Prekės šiuo metu nėra"
+                                  : "Į krepšelį"}
+                        </Button>
+
+                        <Button variant="secondary" size="lg" onClick={() => onNavigate?.("/products")}>
+                            Grįžti į katalogą
+                        </Button>
                     </div>
 
-                    {added && <p className="mt-4 text-sm font-medium text-emerald-700">Preke sekmingai ideta i krepseli.</p>}
-                </div>
+                    {added ? (
+                        <div className="mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
+                            Prekė sėkmingai įdėta į krepšelį.
+                        </div>
+                    ) : null}
+
+                    <div className="mt-8 space-y-3 border-t border-[var(--border)] pt-6 text-sm leading-7 text-[var(--foreground-muted)]">
+                        <p>
+                            Prekės kodas #{product.productId ?? product.id}. Sukurta kasdieniam dėvėjimui ir lengvam derinimui prie neutralaus garderobo.
+                        </p>
+                        <p>
+                            Paprastas siluetas, patogus kritimas ir subtilios detalės leidžia šį modelį dėvėti nuo ryto iki vakaro.
+                        </p>
+                    </div>
+                </aside>
             </div>
         </div>
     );

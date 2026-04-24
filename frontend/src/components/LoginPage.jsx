@@ -1,5 +1,28 @@
 import { useState } from "react";
 
+import AuthSplitLayout from "./ui/AuthSplitLayout";
+import Button from "./ui/Button";
+import Field from "./ui/Field";
+
+const BENEFITS = ["Išsaugotas krepšelis", "Greitesnis apsipirkimas", "Patogus grįžimas prie prekių"];
+
+function toBooleanFlag(value) {
+    if (typeof value === "boolean") {
+        return value;
+    }
+
+    if (typeof value === "number") {
+        return value === 1;
+    }
+
+    if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        return normalized === "true" || normalized === "1";
+    }
+
+    return false;
+}
+
 export default function LoginPage({ onLoginSuccess, onNavigate, defaultEmail = "" }) {
     const [email, setEmail] = useState(defaultEmail);
     const [password, setPassword] = useState("");
@@ -7,8 +30,8 @@ export default function LoginPage({ onLoginSuccess, onNavigate, defaultEmail = "
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    async function handleSubmit(e) {
-        e.preventDefault();
+    async function handleSubmit(event) {
+        event.preventDefault();
         setError("");
         setMessage("");
         setLoading(true);
@@ -40,101 +63,87 @@ export default function LoginPage({ onLoginSuccess, onNavigate, defaultEmail = "
                 data = null;
             }
 
+            const userData = data?.user ?? data ?? null;
             const resolvedName =
-                data?.name ||
-                data?.userName ||
-                data?.username ||
-                data?.fullName ||
+                userData?.name ||
+                userData?.Name ||
+                userData?.userName ||
+                userData?.username ||
+                userData?.fullName ||
                 email.split("@")[0];
-            const resolvedUserId = Number(
-                data?.userId ?? data?.id ?? data?.user?.userId ?? data?.user?.id
-            );
+            const resolvedUserId = Number(userData?.userId ?? userData?.id ?? userData?.Id);
+            const resolvedIsAdmin = toBooleanFlag(userData?.isAdmin ?? userData?.IsAdmin);
 
             onLoginSuccess?.({
                 name: resolvedName,
                 userId: Number.isFinite(resolvedUserId) && resolvedUserId > 0 ? resolvedUserId : null,
+                isAdmin: resolvedIsAdmin,
             });
-            setMessage("Prisijungimas sekmingas.");
+            setMessage("Prisijungimas sėkmingas.");
             onNavigate?.("/");
-        } catch (err) {
-            setError(String(err.message || err));
+        } catch (nextError) {
+            setError(String(nextError.message || nextError));
         } finally {
             setLoading(false);
         }
     }
 
     return (
-        <div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm lg:grid lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.1fr)]">
-            <div className="bg-slate-900 p-8 text-white">
-                <div className="text-xs uppercase tracking-[0.22em] text-slate-300">Kliento zona</div>
-                <h2 className="mt-4 text-3xl font-semibold">Prisijungimas</h2>
-                <p className="mt-4 text-sm leading-7 text-slate-300">
-                    Prisijunkite prie savo paskyros ir toliau pildykite krepseli iprastu parduotuves srautu.
+        <AuthSplitLayout
+            eyebrow="Kliento zona"
+            title="Prisijunkite prie savo paskyros"
+            description="Tęskite apsipirkimą, peržiūrėkite pasirinktus modelius ir grįžkite prie krepšelio vienu paspaudimu."
+            highlights={BENEFITS}
+            insightTitle="Patogiau kasdienai"
+            insightBody="Prisijungus lengviau grįžti prie patikusių modelių ir tęsti apsipirkimą bet kuriuo metu."
+        >
+            <div className="max-w-lg">
+                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--foreground-subtle)]">Kliento paskyra</div>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--foreground-strong)]">Įveskite savo duomenis</h2>
+                <p className="mt-3 text-sm leading-7 text-[var(--foreground-muted)]">
+                    Prisijunkite, kad galėtumėte tęsti apsipirkimą ir valdyti krepšelį.
                 </p>
-            </div>
-
-            <div className="p-8">
-                <h3 className="text-2xl font-semibold text-slate-900">Iveskite duomenis</h3>
-                <p className="mt-2 text-sm text-slate-500">Naudokite savo el. pasta ir slaptazodi.</p>
 
                 <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="login-email">
-                            El. pastas
-                        </label>
-                        <input
-                            id="login-email"
-                            type="email"
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                            placeholder="vardas@email.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="login-password">
-                            Slaptazodis
-                        </label>
-                        <input
-                            id="login-password"
-                            type="password"
-                            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400"
-                            placeholder="Iveskite slaptažodį"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                    >
+                    <Field
+                        id="login-email"
+                        type="email"
+                        label="El. paštas"
+                        placeholder="vardas@pastas.lt"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        required
+                    />
+                    <Field
+                        id="login-password"
+                        type="password"
+                        label="Slaptažodis"
+                        placeholder="Įveskite slaptažodį"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        required
+                    />
+                    <Button type="submit" size="lg" block disabled={loading}>
                         {loading ? "Jungiama..." : "Prisijungti"}
-                    </button>
+                    </Button>
                 </form>
 
-                {message && (
-                    <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+                {message ? (
+                    <div className="mt-5 rounded-[24px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
                         {message}
                     </div>
-                )}
-                {error && (
-                    <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                ) : null}
+
+                {error ? (
+                    <div className="mt-5 rounded-[24px] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
                         Klaida: {error}
                     </div>
-                )}
+                ) : null}
 
-                <button
-                    className="mt-5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                    onClick={() => onNavigate?.("/")}
-                >
-                    Grizti i parduotuve
-                </button>
+                <Button variant="secondary" size="lg" block className="mt-5" onClick={() => onNavigate?.("/")}>
+                    Grįžti į pradžią
+                </Button>
             </div>
-        </div>
+        </AuthSplitLayout>
     );
 }
