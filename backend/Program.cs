@@ -52,9 +52,9 @@ void ConfigureCors(Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions options)
 
 void ConfigureFrontPolicy(Microsoft.AspNetCore.Cors.Infrastructure.CorsPolicyBuilder policy)
 {
-    policy.WithOrigins("http://localhost:5173");
-    policy.AllowAnyHeader();
-    policy.AllowAnyMethod();
+    policy.AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod();
 }
 
 void ConfigureDbContext(DbContextOptionsBuilder options)
