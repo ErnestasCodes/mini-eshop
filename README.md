@@ -3,6 +3,8 @@
 Pilno stacko mini e-shop projektas su atskiru backend ir frontend. Projektą kūriau tam, kad praktiškai išbandyčiau .NET Web API, darbą su duomenų baze ir frontend–backend integraciją.
 Frontend pilnai parašytas naudojantis AI įrankiais, nes visas fokusas skirtas backend mokymuisi
 
+Live demo: https://mini-eshop-black.vercel.app/
+
 # Pastabos
 Projektas nėra baigtinis – jį nuolat pildau, pridedu naujų funkcijų ir taisau klaidas.
 
