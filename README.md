@@ -6,6 +6,16 @@ Frontend pilnai parašytas naudojantis AI įrankiais, nes visas fokusas skirtas 
 # Pastabos
 Projektas nėra baigtinis – jį nuolat pildau, pridedu naujų funkcijų ir taisau klaidas.
 
+#Test users:
+
+#Admin:
+Email: admin@example.com
+Password: Admin123!
+
+#User:
+Email: user@example.com
+Password: User123!
+
 ## Naudotos technologijos
 
 **Backend:**
