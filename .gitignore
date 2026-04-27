@@ -8,3 +8,7 @@ node_modules/
 .env
 appsettings.Development.json
 *.sqlite
+
+backend/publish-test/
+backend/bin/
+backend/obj/
