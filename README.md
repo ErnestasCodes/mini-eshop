@@ -8,13 +8,13 @@ Live demo: https://mini-eshop-black.vercel.app/
 # Pastabos
 Projektas nėra baigtinis – jį nuolat pildau, pridedu naujų funkcijų ir taisau klaidas.
 
-#Test users:
+Test users:
 
-#Admin:
+Admin:
 Email: admin@example.com
 Password: Admin123!
 
-#User:
+User:
 Email: user@example.com
 Password: User123!
 
