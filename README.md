@@ -7,6 +7,7 @@ Live demo: https://mini-eshop-black.vercel.app/
 
 # Pastabos
 Projektas nėra baigtinis – jį nuolat pildau, pridedu naujų funkcijų ir taisau klaidas.
+Backend hostinamas Render (free tier → gali būti lėtesnis pirmas užkrovimas).
 
 Test users:
 
